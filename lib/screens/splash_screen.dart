@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
-import '../theme/app_colors.dart';
+import 'dart:ui';
 import '../widgets/healthcare_background.dart';
-import '../widgets/login_logo.dart';
 import 'login_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -16,12 +15,14 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
+  late Animation<double> _slideAnimation;
+  late Animation<double> _rotateAnimation;
 
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: const Duration(seconds: 2),
+      duration: const Duration(milliseconds: 2500),
       vsync: this,
     );
 
@@ -30,20 +31,36 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
       end: 1.0,
     ).animate(CurvedAnimation(
       parent: _controller,
-      curve: const Interval(0.0, 0.5, curve: Curves.easeIn),
+      curve: const Interval(0.0, 0.5, curve: Curves.easeOut),
     ));
 
     _scaleAnimation = Tween<double>(
-      begin: 0.5,
+      begin: 0.2,
       end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _controller,
+      curve: const Interval(0.0, 0.7, curve: Curves.elasticOut),
+    ));
+
+    _slideAnimation = Tween<double>(
+      begin: 50.0,
+      end: 0.0,
     ).animate(CurvedAnimation(
       parent: _controller,
       curve: const Interval(0.3, 0.8, curve: Curves.easeOut),
     ));
 
+    _rotateAnimation = Tween<double>(
+      begin: 0.0,
+      end: 2.0,
+    ).animate(CurvedAnimation(
+      parent: _controller,
+      curve: const Interval(0.0, 0.7, curve: Curves.easeOut),
+    ));
+
     _controller.forward();
 
-    Timer(const Duration(seconds: 3), () {
+    Timer(const Duration(milliseconds: 3500), () {
       if (mounted) {
         Navigator.pushReplacement(
           context,
@@ -73,34 +90,56 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     final size = MediaQuery.of(context).size;
     final params = {
       'padding': size.width * 0.05,
-      'logoSize': size.width * 0.45,  // Larger logo for splash screen
+      'logoSize': size.width * 0.45,
       'spacing': size.height * 0.022,
-      'titleSize': size.width * 0.09,  // Larger title for splash
+      'titleSize': size.width * 0.09,
       'subtitleSize': size.width * 0.042,
     };
 
     return Scaffold(
-      backgroundColor: Colors.white,
       body: Stack(
         children: [
-          // Background gradient
+          // Main gradient background
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  Colors.white,
-                  Color(0xFFF5F9FF),  // Very light blue
-                  Color(0xFFEDF4FF),  // Light blue tint
+                  Color(0xFF1E88E5),  // Light blue
+                  Color(0xFF1976D2),  // Blue
+                  Color(0xFF1565C0),  // Dark blue
                 ],
               ),
             ),
           ),
-          // Medical symbols background
+          // Glass effect overlay
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.white.withOpacity(0.1),
+                  Colors.white.withOpacity(0.15),
+                ],
+              ),
+            ),
+          ),
+          // Medical symbols background with rotation
           Positioned.fill(
-            child: CustomPaint(
-              painter: HealthcareBackgroundPainter(),
+            child: AnimatedBuilder(
+              animation: _rotateAnimation,
+              builder: (context, child) {
+                return Transform.rotate(
+                  angle: _rotateAnimation.value,
+                  child: const CustomPaint(
+                    painter: HealthcareBackgroundPainter(
+                      color: Color(0x0A2196F3),
+                    ),
+                  ),
+                );
+              },
             ),
           ),
           // Main content
@@ -118,60 +157,79 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                       child: SizedBox(
                         width: params['logoSize'],
                         height: params['logoSize'],
-                        child: const LoginLogo(),
+                        child: Image.asset(
+                          'android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png',
+                          fit: BoxFit.contain,
+                        ),
                       ),
                     ),
                   ),
                 ),
                 SizedBox(height: params['spacing']! * 2),
-                // Text animations
+                // Text animations with slide
                 FadeTransition(
                   opacity: _fadeAnimation,
-                  child: Column(
-                    children: [
-                      Text(
-                        'MARIGOLD',
-                        style: TextStyle(
-                          fontSize: params['titleSize'],
-                          fontWeight: FontWeight.w800,
-                          color: const Color(0xFF2196F3),  // Medical blue
-                          letterSpacing: 4,
-                          height: 1.2,
+                  child: AnimatedBuilder(
+                    animation: _slideAnimation,
+                    builder: (context, child) {
+                      return Transform.translate(
+                        offset: Offset(0, _slideAnimation.value),
+                        child: Column(
+                          children: [
+                            Text(
+                              'MARIGOLD',
+                              style: TextStyle(
+                                fontSize: params['titleSize'],
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white,
+                                letterSpacing: 4,
+                                height: 1.2,
+                                shadows: [
+                                  Shadow(
+                                    color: Colors.black.withOpacity(0.1),
+                                    offset: const Offset(0, 2),
+                                    blurRadius: 4,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            SizedBox(height: params['spacing']),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: Colors.white.withOpacity(0.2),
+                                  width: 1,
+                                ),
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(20),
+                                child: BackdropFilter(
+                                  filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                                  child: Text(
+                                    'PRIME HEALTHCARE',
+                                    style: TextStyle(
+                                      fontSize: params['subtitleSize'],
+                                      color: Colors.white.withOpacity(0.9),
+                                      letterSpacing: 3,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                      SizedBox(height: params['spacing']),
-                      Text(
-                        'PRIME HEALTHCARE',
-                        style: TextStyle(
-                          fontSize: params['subtitleSize'],
-                          color: const Color(0xFF1976D2).withOpacity(0.8),  // Darker medical blue
-                          letterSpacing: 3,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
+                      );
+                    },
                   ),
                 ),
               ],
-            ),
-          ),
-          // Loading indicator
-          Positioned(
-            bottom: 50,
-            left: 0,
-            right: 0,
-            child: FadeTransition(
-              opacity: _fadeAnimation,
-              child: Center(
-                child: SizedBox(
-                  width: 45,
-                  height: 45,
-                  child: CircularProgressIndicator(
-                    color: const Color(0xFF2196F3).withOpacity(0.8),  // Medical blue
-                    strokeWidth: 3,
-                  ),
-                ),
-              ),
             ),
           ),
         ],

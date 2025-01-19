@@ -1,141 +1,138 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 
+class HealthcareBackground extends StatelessWidget {
+  final bool reversed;
+
+  const HealthcareBackground({
+    Key? key,
+    this.reversed = false,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: reversed ? Alignment.topRight : Alignment.topLeft,
+          end: reversed ? Alignment.bottomLeft : Alignment.bottomRight,
+          colors: const [
+            Color(0xFF90CAF9), // Very Light Blue
+            Color(0xFFBBDEFB), // Extra Light Blue
+          ],
+          stops: const [0.0, 0.8],
+        ),
+      ),
+      child: CustomPaint(
+        painter: HealthcareBackgroundPainter(
+          color: Color(0x0A2196F3),
+        ),
+        size: Size.infinite,
+      ),
+    );
+  }
+}
+
 class HealthcareBackgroundPainter extends CustomPainter {
+  final Color color;
+
+  const HealthcareBackgroundPainter({
+    this.color = const Color(0x0A2196F3),
+  });
+
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
+      ..color = color
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5
-      ..color = const Color(0xFF2196F3).withOpacity(0.1);  // Medical blue
+      ..strokeWidth = 1.0;
 
-    // Draw medical symbols pattern
-    final random = math.Random(42);  // Fixed seed for consistent pattern
-    for (int i = 0; i < 30; i++) {
-      final x = random.nextDouble() * size.width;
-      final y = random.nextDouble() * size.height;
-      final symbolSize = 15.0 + random.nextDouble() * 25.0;
-      
-      final symbolType = random.nextInt(5);
-      switch (symbolType) {
-        case 0:
-          _drawCross(canvas, Offset(x, y), symbolSize, paint);
-          break;
-        case 1:
-          _drawHeartbeat(canvas, Offset(x, y), symbolSize, paint);
-          break;
-        case 2:
-          _drawStethoscope(canvas, Offset(x, y), symbolSize, paint);
-          break;
-        case 3:
-          _drawPulse(canvas, Offset(x, y), symbolSize, paint);
-          break;
-        case 4:
-          _drawHeart(canvas, Offset(x, y), symbolSize, paint);
-          break;
+    final spacing = size.width * 0.1;
+    final iconSize = size.width * 0.05;
+
+    for (var x = 0.0; x < size.width; x += spacing) {
+      for (var y = 0.0; y < size.height; y += spacing) {
+        final random = math.Random((x + y).toInt());
+        final icon = random.nextInt(4);
+
+        switch (icon) {
+          case 0:
+            _drawCross(canvas, paint, Offset(x, y), iconSize);
+            break;
+          case 1:
+            _drawHeart(canvas, paint, Offset(x, y), iconSize);
+            break;
+          case 2:
+            _drawPlus(canvas, paint, Offset(x, y), iconSize);
+            break;
+          case 3:
+            _drawPill(canvas, paint, Offset(x, y), iconSize);
+            break;
+        }
       }
     }
-
-    // Add top wave decoration
-    final wavePath = Path();
-    wavePath.moveTo(0, 0);
-    wavePath.lineTo(0, size.height * 0.2);
-    
-    for (var i = 0; i <= 5; i++) {
-      final x = size.width * (i / 5);
-      final y = size.height * 0.2 + math.sin(i * math.pi) * 40;
-      wavePath.lineTo(x, y);
-    }
-    
-    wavePath.lineTo(size.width, 0);
-    wavePath.close();
-
-    final waveGradient = LinearGradient(
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
-      colors: [
-        const Color(0xFF2196F3).withOpacity(0.1),  // Medical blue
-        const Color(0xFF64B5F6).withOpacity(0.05),  // Lighter blue
-      ],
-    ).createShader(Rect.fromLTWH(0, 0, size.width, size.height * 0.25));
-
-    canvas.drawPath(wavePath, Paint()..shader = waveGradient);
   }
 
-  void _drawCross(Canvas canvas, Offset center, double size, Paint paint) {
+  void _drawCross(Canvas canvas, Paint paint, Offset center, double size) {
     canvas.drawLine(
-      Offset(center.dx - size/2, center.dy),
-      Offset(center.dx + size/2, center.dy),
+      Offset(center.dx - size / 2, center.dy),
+      Offset(center.dx + size / 2, center.dy),
       paint,
     );
     canvas.drawLine(
-      Offset(center.dx, center.dy - size/2),
-      Offset(center.dx, center.dy + size/2),
+      Offset(center.dx, center.dy - size / 2),
+      Offset(center.dx, center.dy + size / 2),
       paint,
     );
   }
 
-  void _drawHeartbeat(Canvas canvas, Offset center, double size, Paint paint) {
+  void _drawHeart(Canvas canvas, Paint paint, Offset center, double size) {
     final path = Path();
-    path.moveTo(center.dx - size/2, center.dy);
-    path.lineTo(center.dx - size/4, center.dy);
-    path.lineTo(center.dx - size/8, center.dy - size/2);
-    path.lineTo(center.dx + size/8, center.dy + size/2);
-    path.lineTo(center.dx + size/4, center.dy);
-    path.lineTo(center.dx + size/2, center.dy);
+    path.moveTo(center.dx, center.dy + size / 2);
+    path.cubicTo(
+      center.dx - size / 2,
+      center.dy,
+      center.dx - size / 2,
+      center.dy - size / 2,
+      center.dx,
+      center.dy - size / 2,
+    );
+    path.cubicTo(
+      center.dx + size / 2,
+      center.dy - size / 2,
+      center.dx + size / 2,
+      center.dy,
+      center.dx,
+      center.dy + size / 2,
+    );
     canvas.drawPath(path, paint);
   }
 
-  void _drawStethoscope(Canvas canvas, Offset center, double size, Paint paint) {
-    final path = Path();
-    canvas.drawCircle(
-      Offset(center.dx, center.dy + size/3),
-      size/4,
+  void _drawPlus(Canvas canvas, Paint paint, Offset center, double size) {
+    canvas.drawLine(
+      Offset(center.dx - size / 3, center.dy),
+      Offset(center.dx + size / 3, center.dy),
       paint,
     );
-    path.moveTo(center.dx, center.dy + size/3);
-    path.lineTo(center.dx, center.dy - size/3);
-    path.arcTo(
-      Rect.fromCenter(
-        center: Offset(center.dx + size/4, center.dy - size/3),
-        width: size/2,
-        height: size/2,
-      ),
-      math.pi,
-      -math.pi,
-      false,
+    canvas.drawLine(
+      Offset(center.dx, center.dy - size / 3),
+      Offset(center.dx, center.dy + size / 3),
+      paint,
     );
-    canvas.drawPath(path, paint);
   }
 
-  void _drawPulse(Canvas canvas, Offset center, double size, Paint paint) {
-    final path = Path();
-    path.moveTo(center.dx - size/2, center.dy);
-    path.lineTo(center.dx - size/4, center.dy);
-    path.lineTo(center.dx - size/6, center.dy - size/3);
-    path.lineTo(center.dx, center.dy + size/3);
-    path.lineTo(center.dx + size/6, center.dy - size/3);
-    path.lineTo(center.dx + size/4, center.dy);
-    path.lineTo(center.dx + size/2, center.dy);
-    canvas.drawPath(path, paint);
-  }
-
-  void _drawHeart(Canvas canvas, Offset center, double size, Paint paint) {
-    final path = Path();
-    path.moveTo(center.dx, center.dy + size/3);
-    path.cubicTo(
-      center.dx - size/2, center.dy - size/3,
-      center.dx - size/2, center.dy - size,
-      center.dx, center.dy - size/3,
+  void _drawPill(Canvas canvas, Paint paint, Offset center, double size) {
+    final rect = Rect.fromCenter(
+      center: center,
+      width: size / 2,
+      height: size,
     );
-    path.cubicTo(
-      center.dx + size/2, center.dy - size,
-      center.dx + size/2, center.dy - size/3,
-      center.dx, center.dy + size/3,
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(rect, Radius.circular(size / 4)),
+      paint,
     );
-    canvas.drawPath(path, paint);
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(CustomPainter oldDelegate) => false;
 } 
