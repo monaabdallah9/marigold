@@ -1,68 +1,16 @@
-# Marigold
+# marigold app
 
-A beautiful Flutter application with a modern UI and seamless user experience.
-
-## Features
-
-- Modern and intuitive user interface
-- Dark and light theme support
-- Portrait mode optimization
-- System theme integration
-- Splash screen implementation
+A new Flutter project.
 
 ## Getting Started
 
-### Prerequisites
+This project is a starting point for a Flutter application.
 
-- Flutter SDK (latest version)
-- Dart SDK (latest version)
-- Android Studio / VS Code
-- Git
+A few resources to get you started if this is your first Flutter project:
 
-### Installation
+- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
+- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
 
-1. Clone the repository
-```bash
-git clone https://github.com/gosterr/marigold2.git
-```
-
-2. Navigate to the project directory
-```bash
-cd marigold
-```
-
-3. Install dependencies
-```bash
-flutter pub get
-```
-
-4. Run the app
-```bash
-flutter run
-```
-
-## Project Structure
-
-- `lib/main.dart` - Entry point of the application
-- `lib/screens/` - Contains all screen widgets
-- `lib/theme/` - Theme configuration and styling
-
-## Technical Details
-
-- Built with Flutter
-- Material Design implementation
-- Responsive layout design
-- Portrait mode only
-- Fixed text scale factor for consistent UI
-
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
+For help getting started with Flutter development, view the
+[online documentation](https://docs.flutter.dev/), which offers tutorials,
+samples, guidance on mobile development, and a full API reference.
