@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import 'dart:ui';
 import '../widgets/healthcare_background.dart';
+import '../theme/app_colors.dart';
 import 'login_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -106,23 +107,47 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  Color(0xFF1E88E5),  // Light blue
-                  Color(0xFF1976D2),  // Blue
-                  Color(0xFF1565C0),  // Dark blue
+                  AppColors.primaryColor,  // Deep Blue
+                  AppColors.secondaryColor,  // Medium Blue
                 ],
               ),
             ),
           ),
-          // Glass effect overlay
+          // Glass effect overlay with accent color
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  Colors.white.withOpacity(0.1),
-                  Colors.white.withOpacity(0.15),
+                  AppColors.accentColor.withOpacity(0.05),
+                  AppColors.tertiaryColor.withOpacity(0.1),
                 ],
+              ),
+            ),
+          ),
+          // Decorative elements
+          Positioned(
+            top: -size.width * 0.2,
+            right: -size.width * 0.2,
+            child: Container(
+              width: size.width * 0.7,
+              height: size.width * 0.7,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.accentColor.withOpacity(0.2),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: -size.width * 0.15,
+            left: -size.width * 0.15,
+            child: Container(
+              width: size.width * 0.5,
+              height: size.width * 0.5,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.tertiaryColor.withOpacity(0.2),
               ),
             ),
           ),
@@ -133,9 +158,9 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
               builder: (context, child) {
                 return Transform.rotate(
                   angle: _rotateAnimation.value,
-                  child: const CustomPaint(
+                  child: CustomPaint(
                     painter: HealthcareBackgroundPainter(
-                      color: Color(0x0A2196F3),
+                      color: AppColors.accentColor.withOpacity(0.1),
                     ),
                   ),
                 );
@@ -154,11 +179,23 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                     scale: _scaleAnimation,
                     child: Hero(
                       tag: 'app_logo',
-                      child: SizedBox(
+                      child: Container(
                         width: params['logoSize'],
                         height: params['logoSize'],
+                        padding: EdgeInsets.all(params['padding']! * 0.5),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white.withOpacity(0.15),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.primaryColor.withOpacity(0.2),
+                              blurRadius: 20,
+                              spreadRadius: 5,
+                            ),
+                          ],
+                        ),
                         child: Image.asset(
-                          'android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png',
+                          'assets/images/logo.png',
                           fit: BoxFit.contain,
                         ),
                       ),
@@ -186,7 +223,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                                 height: 1.2,
                                 shadows: [
                                   Shadow(
-                                    color: Colors.black.withOpacity(0.1),
+                                    color: Colors.black.withOpacity(0.2),
                                     offset: const Offset(0, 2),
                                     blurRadius: 4,
                                   ),
@@ -196,16 +233,23 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                             SizedBox(height: params['spacing']),
                             Container(
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
+                                horizontal: 20,
+                                vertical: 10,
                               ),
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.1),
+                                color: AppColors.accentColor.withOpacity(0.2),
                                 borderRadius: BorderRadius.circular(20),
                                 border: Border.all(
-                                  color: Colors.white.withOpacity(0.2),
-                                  width: 1,
+                                  color: AppColors.tertiaryColor.withOpacity(0.3),
+                                  width: 1.5,
                                 ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppColors.primaryColor.withOpacity(0.1),
+                                    blurRadius: 10,
+                                    spreadRadius: 1,
+                                  ),
+                                ],
                               ),
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(20),
@@ -215,7 +259,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                                     'PRIME HEALTHCARE',
                                     style: TextStyle(
                                       fontSize: params['subtitleSize'],
-                                      color: Colors.white.withOpacity(0.9),
+                                      color: Colors.white.withOpacity(0.95),
                                       letterSpacing: 3,
                                       fontWeight: FontWeight.w600,
                                     ),

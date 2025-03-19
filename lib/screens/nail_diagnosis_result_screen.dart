@@ -1,4 +1,23 @@
 import 'package:flutter/material.dart';
+import 'dart:ui';
+import '../theme/app_colors.dart';
+import '../l10n/app_localizations.dart';
+
+class DiagnosisResult {
+  final String parameter;
+  final String value;
+  final String? description;
+  final String? recommendation;
+  final double? severity;
+
+  DiagnosisResult({
+    required this.parameter,
+    required this.value,
+    this.description,
+    this.recommendation,
+    this.severity,
+  });
+}
 
 class NailDiagnosisResultScreen extends StatefulWidget {
   final List<DiagnosisResult> results;
@@ -14,15 +33,29 @@ class NailDiagnosisResultScreen extends StatefulWidget {
 
 class _NailDiagnosisResultScreenState extends State<NailDiagnosisResultScreen> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
-  int _selectedRating = 0;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
 
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 800),
+      duration: const Duration(milliseconds: 1200),
       vsync: this,
     )..forward();
+
+    _fadeAnimation = CurvedAnimation(
+      parent: _controller,
+      curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
+    );
+
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _controller,
+      curve: const Interval(0.2, 0.7, curve: Curves.easeOutCubic),
+    ));
   }
 
   @override
@@ -34,275 +67,404 @@ class _NailDiagnosisResultScreenState extends State<NailDiagnosisResultScreen> w
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        width: double.infinity,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Colors.blue[50]!,
-              const Color(0xFF1A237E),
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              _buildHeader(context),
-              _buildRatingSection(),
-              _buildResultsSection(),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHeader(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(20),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      body: Stack(
         children: [
-          Text(
-            'Results',
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey[800],
-            ),
-          ),
-          GestureDetector(
-            onTap: () => Navigator.pop(context),
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, 2),
-                  ),
+          // Background gradient
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  AppColors.primaryColor,
+                  AppColors.secondaryColor.withOpacity(0.9),
                 ],
-              ),
-              child: const Icon(
-                Icons.close_rounded,
-                color: Color(0xFF1A237E),
+                stops: const [0.3, 1.0],
               ),
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildRatingSection() {
-    return SlideTransition(
-      position: Tween<Offset>(
-        begin: const Offset(0, 0.2),
-        end: Offset.zero,
-      ).animate(CurvedAnimation(
-        parent: _controller,
-        curve: Curves.easeOutCubic,
-      )),
-      child: FadeTransition(
-        opacity: _controller,
-        child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 20),
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.08),
-                blurRadius: 20,
-                offset: const Offset(0, 4),
+          // Decorative elements
+          Positioned(
+            top: -100,
+            right: -100,
+            child: Container(
+              width: 300,
+              height: 300,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    AppColors.accentColor.withOpacity(0.2),
+                    AppColors.accentColor.withOpacity(0.0),
+                  ],
+                ),
               ),
-            ],
+            ),
           ),
-          child: Column(
-            children: [
-              const Text(
-                'Finished',
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1A237E),
+          Positioned(
+            bottom: -80,
+            left: -80,
+            child: Container(
+              width: 200,
+              height: 200,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    AppColors.tertiaryColor.withOpacity(0.2),
+                    AppColors.tertiaryColor.withOpacity(0.0),
+                  ],
                 ),
               ),
-              const SizedBox(height: 12),
-              Text(
-                'Nail diagnosis',
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 20,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const SizedBox(height: 24),
-              const Text(
-                'Rate this service',
-                style: TextStyle(
-                  color: Colors.grey,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(
-                  5,
-                  (index) => GestureDetector(
-                    onTap: () => setState(() => _selectedRating = index + 1),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      child: TweenAnimationBuilder<double>(
-                        duration: const Duration(milliseconds: 300),
-                        tween: Tween(
-                          begin: 0.0,
-                          end: _selectedRating > index ? 1.0 : 0.0,
-                        ),
-                        builder: (context, value, child) {
-                          return Icon(
-                            value > 0 ? Icons.star_rounded : Icons.star_outline_rounded,
-                            color: Colors.amber,
-                            size: 36 + (value * 4),
-                          );
-                        },
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildResultsSection() {
-    return Expanded(
-      child: Container(
-        width: double.infinity,
-        margin: const EdgeInsets.only(top: 24),
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          // Main content
+          SafeArea(
+            child: Column(
               children: [
-                const Text(
-                  'Diagnosis Details',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
+                // App Bar
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    children: [
+                      Container(
+                        decoration: BoxDecoration(
+                          color: AppColors.accentColor.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: AppColors.tertiaryColor.withOpacity(0.3),
+                            width: 1,
+                          ),
+                        ),
+                        child: IconButton(
+                          icon: Icon(Icons.arrow_back, color: Colors.white.withOpacity(0.9)),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Text(
+                        AppLocalizations.of(context).translate('analysisResults'),
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                TextButton.icon(
-                  onPressed: () {
-                    // Implement see more functionality
-                  },
-                  icon: const Icon(
-                    Icons.arrow_forward_rounded,
-                    color: Colors.white70,
-                    size: 20,
-                  ),
-                  label: const Text(
-                    'See more',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 16,
+                // Main Content
+                Expanded(
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    child: Padding(
+                      padding: const EdgeInsets.all(24.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Summary Section
+                          SlideTransition(
+                            position: _slideAnimation,
+                            child: FadeTransition(
+                              opacity: _fadeAnimation,
+                              child: Container(
+                                padding: const EdgeInsets.all(24),
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: [
+                                      Colors.white.withOpacity(0.15),
+                                      Colors.white.withOpacity(0.05),
+                                    ],
+                                  ),
+                                  borderRadius: BorderRadius.circular(24),
+                                  border: Border.all(
+                                    color: AppColors.tertiaryColor.withOpacity(0.3),
+                                    width: 1.5,
+                                  ),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(12),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.accentColor.withOpacity(0.2),
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: const Icon(
+                                            Icons.analytics_outlined,
+                                            color: Colors.white,
+                                            size: 24,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 16),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                AppLocalizations.of(context).translate('analysisComplete'),
+                                                style: const TextStyle(
+                                                  fontSize: 20,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Colors.white,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                AppLocalizations.of(context).translate('detailedResults'),
+                                                style: const TextStyle(
+                                                  fontSize: 14,
+                                                  color: Colors.white70,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          // Results List
+                          ...List.generate(widget.results.length, (index) {
+                            final result = widget.results[index];
+                            return SlideTransition(
+                              position: Tween<Offset>(
+                                begin: const Offset(0, 0.3),
+                                end: Offset.zero,
+                              ).animate(CurvedAnimation(
+                                parent: _controller,
+                                curve: Interval(
+                                  0.2 + (index * 0.1),
+                                  0.7 + (index * 0.1),
+                                  curve: Curves.easeOutCubic,
+                                ),
+                              )),
+                              child: FadeTransition(
+                                opacity: CurvedAnimation(
+                                  parent: _controller,
+                                  curve: Interval(
+                                    0.2 + (index * 0.1),
+                                    0.7 + (index * 0.1),
+                                    curve: Curves.easeOut,
+                                  ),
+                                ),
+                                child: Container(
+                                  margin: const EdgeInsets.only(bottom: 16),
+                                  padding: const EdgeInsets.all(20),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.accentColor.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(
+                                      color: AppColors.tertiaryColor.withOpacity(0.3),
+                                      width: 1.5,
+                                    ),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.all(10),
+                                            decoration: BoxDecoration(
+                                              color: AppColors.primaryColor.withOpacity(0.2),
+                                              borderRadius: BorderRadius.circular(12),
+                                            ),
+                                            child: Icon(
+                                              _getIconForCondition(result.value),
+                                              color: Colors.white,
+                                              size: 20,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  result.value,
+                                                  style: const TextStyle(
+                                                    fontSize: 16,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: Colors.white,
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 4),
+                                                Text(
+                                                  _getDescriptionForCondition(result.value),
+                                                  style: TextStyle(
+                                                    fontSize: 14,
+                                                    color: Colors.white.withOpacity(0.7),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 16),
+                                      Container(
+                                        padding: const EdgeInsets.all(16),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withOpacity(0.05),
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              'Recommendations',
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w600,
+                                                color: Colors.white.withOpacity(0.9),
+                                              ),
+                                            ),
+                                            const SizedBox(height: 8),
+                                            Text(
+                                              _getRecommendationForCondition(result.value),
+                                              style: TextStyle(
+                                                fontSize: 13,
+                                                color: Colors.white.withOpacity(0.7),
+                                                height: 1.4,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            );
+                          }),
+                          const SizedBox(height: 24),
+                          // Action Button
+                          SlideTransition(
+                            position: _slideAnimation,
+                            child: FadeTransition(
+                              opacity: _fadeAnimation,
+                              child: Container(
+                                width: double.infinity,
+                                height: 60,
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: [
+                                      AppColors.accentColor.withOpacity(0.8),
+                                      AppColors.primaryColor.withOpacity(0.9),
+                                    ],
+                                  ),
+                                  borderRadius: BorderRadius.circular(20),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: AppColors.primaryColor.withOpacity(0.3),
+                                      blurRadius: 15,
+                                      offset: const Offset(0, 5),
+                                    ),
+                                  ],
+                                ),
+                                child: Material(
+                                  color: Colors.transparent,
+                                  child: InkWell(
+                                    onTap: () {
+                                      // TODO: Implement detailed report generation
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                          content: Text('Generating detailed report...'),
+                                          duration: Duration(seconds: 2),
+                                        ),
+                                      );
+                                    },
+                                    borderRadius: BorderRadius.circular(20),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                                      decoration: BoxDecoration(
+                                        border: Border.all(
+                                          color: Colors.white.withOpacity(0.2),
+                                          width: 1,
+                                        ),
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            Icons.description_outlined,
+                                            color: Colors.white.withOpacity(0.95),
+                                            size: 24,
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Text(
+                                            'Generate Detailed Report',
+                                            style: TextStyle(
+                                              color: Colors.white.withOpacity(0.95),
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold,
+                                              letterSpacing: 0.5,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 20),
-            Expanded(
-              child: ListView.separated(
-                itemCount: widget.results.length,
-                separatorBuilder: (context, index) => const SizedBox(height: 12),
-                itemBuilder: (context, index) {
-                  final animation = Tween<double>(begin: 0, end: 1).animate(
-                    CurvedAnimation(
-                      parent: _controller,
-                      curve: Interval(
-                        0.2 + (index * 0.1),
-                        0.8 + (index * 0.1),
-                        curve: Curves.easeOutCubic,
-                      ),
-                    ),
-                  );
-                  return FadeTransition(
-                    opacity: animation,
-                    child: SlideTransition(
-                      position: Tween<Offset>(
-                        begin: const Offset(0.2, 0),
-                        end: Offset.zero,
-                      ).animate(animation),
-                      child: _buildResultCard(widget.results[index]),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildResultCard(DiagnosisResult result) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.2),
-          width: 1,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            result.parameter,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            result.value,
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.white.withOpacity(0.9),
-            ),
           ),
         ],
       ),
     );
   }
-}
 
-class DiagnosisResult {
-  final String parameter;
-  final String value;
+  IconData _getIconForCondition(String condition) {
+    if (condition.contains('Anemia')) {
+      return Icons.bloodtype_outlined;
+    } else if (condition.contains('Onychomycosis')) {
+      return Icons.bug_report_outlined;
+    } else if (condition.contains('Psoriasis')) {
+      return Icons.healing_outlined;
+    }
+    return Icons.medical_information_outlined;
+  }
 
-  const DiagnosisResult({
-    required this.parameter,
-    required this.value,
-  });
+  String _getDescriptionForCondition(String condition) {
+    if (condition.contains('Anemia')) {
+      return 'Potential signs of iron deficiency detected in nail appearance';
+    } else if (condition.contains('Onychomycosis')) {
+      return 'Early indicators of fungal infection observed';
+    } else if (condition.contains('Psoriasis')) {
+      return 'Characteristic signs of nail psoriasis identified';
+    }
+    return 'Further analysis recommended';
+  }
+
+  String _getRecommendationForCondition(String condition) {
+    if (condition.contains('Anemia')) {
+      return '• Consider iron supplementation\n• Increase iron-rich foods in diet\n• Schedule blood test for confirmation\n• Consult with healthcare provider';
+    } else if (condition.contains('Onychomycosis')) {
+      return '• Keep nails clean and dry\n• Apply antifungal treatment\n• Wear breathable footwear\n• Consider prescription medication';
+    } else if (condition.contains('Psoriasis')) {
+      return '• Use moisturizing treatments\n• Protect nails from trauma\n• Consider topical medications\n• Consult dermatologist';
+    }
+    return 'Schedule follow-up with healthcare provider';
+  }
 } 

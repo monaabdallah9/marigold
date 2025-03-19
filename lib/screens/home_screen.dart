@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
+import 'dart:math' as math;
+import '../theme/app_colors.dart';
 import 'nail_detection_screen.dart';
 import 'lab_result_screen.dart';
 import 'calendar_screen.dart';
@@ -7,6 +9,9 @@ import 'notifications_screen.dart';
 import 'settings_screen.dart';
 import 'profile_screen.dart';
 import 'dose_alert_screen.dart';
+import '../utils/page_transition.dart';
+import 'medical_history_screen.dart';
+import '../l10n/app_localizations.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -21,8 +26,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   final List<Widget> _screens = [
     const _HomeContent(),
-    const CalendarScreen(),
-    const NotificationsScreen(),
+    const SettingsScreen(),
   ];
 
   @override
@@ -43,46 +47,109 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Color(0xFF1E88E5),  // Light blue
-            Color(0xFF1976D2),  // Blue
-            Color(0xFF1565C0),  // Dark blue
+            AppColors.primaryColor,
+            AppColors.secondaryColor.withOpacity(0.9),
           ],
+          stops: const [0.3, 1.0],
         ),
       ),
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        body: _screens[_selectedIndex],
+        body: Stack(
+          children: [
+            // Decorative elements
+            Positioned(
+              top: -100,
+              right: -100,
+              child: Container(
+                width: 300,
+                height: 300,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [
+                      AppColors.accentColor.withOpacity(0.2),
+                      AppColors.accentColor.withOpacity(0.0),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              bottom: -80,
+              left: -80,
+              child: Container(
+                width: 200,
+                height: 200,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [
+                      AppColors.tertiaryColor.withOpacity(0.2),
+                      AppColors.tertiaryColor.withOpacity(0.0),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            // Animated background patterns
+            Positioned.fill(
+              child: CustomPaint(
+                painter: BackgroundPatternPainter(
+                  color: AppColors.accentColor.withOpacity(0.05),
+                ),
+              ),
+            ),
+            // Main content
+            _screens[_selectedIndex],
+          ],
+        ),
+        extendBody: true,
         bottomNavigationBar: _buildNavigationBar(),
       ),
     );
   }
 
   Widget _buildNavigationBar() {
-    return ClipRect(
+    return ClipRRect(
+      borderRadius: const BorderRadius.only(
+        topLeft: Radius.circular(30),
+        topRight: Radius.circular(30),
+      ),
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
         child: Container(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.1),
+            color: AppColors.primaryColor.withOpacity(0.2),
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(30),
+              topRight: Radius.circular(30),
+            ),
             border: Border(
               top: BorderSide(
-                color: Colors.white.withOpacity(0.2),
+                color: AppColors.tertiaryColor.withOpacity(0.3),
                 width: 1,
               ),
             ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 10,
+                offset: const Offset(0, -5),
+              ),
+            ],
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _buildNavBarItem(Icons.home_rounded, 0),
-              _buildNavBarItem(Icons.calendar_month_rounded, 1),
-              _buildNavBarItem(Icons.notifications_rounded, 2),
+              _buildNavBarItem(Icons.settings, 1),
             ],
           ),
         ),
@@ -90,25 +157,35 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     );
   }
 
-  Widget _buildNavBarItem(IconData icon, int index) {
+  Widget _buildNavBarItem(IconData icon, int index, {VoidCallback? onTap}) {
     final isSelected = _selectedIndex == index;
     return GestureDetector(
       onTap: () => setState(() => _selectedIndex = index),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.all(12),
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOutCubic,
+        padding: EdgeInsets.all(isSelected ? 16 : 12),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.white.withOpacity(0.2) : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
+          color: isSelected ? AppColors.accentColor.withOpacity(0.3) : Colors.transparent,
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected ? Colors.white.withOpacity(0.3) : Colors.transparent,
-            width: 1,
+            color: isSelected ? AppColors.tertiaryColor.withOpacity(0.5) : Colors.transparent,
+            width: 1.5,
           ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: AppColors.accentColor.withOpacity(0.3),
+                    blurRadius: 8,
+                    spreadRadius: 1,
+                  )
+                ]
+              : null,
         ),
         child: Icon(
           icon,
           color: Colors.white.withOpacity(isSelected ? 1 : 0.6),
-          size: 24,
+          size: isSelected ? 28 : 24,
         ),
       ),
     );
@@ -126,189 +203,326 @@ class _HomeContentState extends State<_HomeContent> with SingleTickerProviderSta
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
-
-  final List<FeatureItem> _features = [
-    FeatureItem(
-      title: 'Nail Detection',
-      icon: Icons.fingerprint,
-      color: const Color(0xFF1976D2),
-      subtitle: 'Analyze nail conditions',
-      route: const NailDetectionScreen(),
-    ),
-    FeatureItem(
-      title: 'Medical History',
-      icon: Icons.medical_information,
-      color: const Color(0xFF4CAF50),
-      subtitle: 'View your medical records',
-    ),
-    FeatureItem(
-      title: 'Lab Results',
-      icon: Icons.science_outlined,
-      color: const Color(0xFFFF9800),
-      subtitle: 'Check your test results',
-      route: const LabResultScreen(),
-    ),
-    FeatureItem(
-      title: 'Dose Alert',
-      subtitle: 'Set medication reminders',
-      icon: Icons.medication_outlined,
-      color: const Color(0xFF1976D2),
-      route: const DoseAlertScreen(),
-    ),
-  ];
+  late ScrollController _scrollController;
+  late List<FeatureItem> _features;
 
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 1000),
+      duration: const Duration(milliseconds: 1200),
       vsync: this,
     )..forward();
+
+    _fadeAnimation = CurvedAnimation(
+      parent: _controller,
+      curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
+    );
+
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _controller,
+      curve: const Interval(0.2, 0.7, curve: Curves.easeOutCubic),
+    ));
+
+    _scrollController = ScrollController();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final appLocalizations = AppLocalizations.of(context);
+    _features = [
+      FeatureItem(
+        title: appLocalizations.translate('nailDetection'),
+        icon: Icons.fingerprint,
+        color: AppColors.primaryColor,
+        subtitle: appLocalizations.translate('analyzeNails'),
+        route: const NailDetectionScreen(),
+      ),
+      FeatureItem(
+        title: appLocalizations.translate('medicalHistory'),
+        icon: Icons.medical_information,
+        color: AppColors.secondaryColor,
+        subtitle: appLocalizations.translate('viewMedicalRecords'),
+        route: const MedicalHistoryScreen(),
+      ),
+      FeatureItem(
+        title: appLocalizations.translate('labResults'),
+        icon: Icons.science_outlined,
+        color: AppColors.accentColor,
+        subtitle: appLocalizations.translate('checkResults'),
+        route: const LabResultScreen(),
+      ),
+      FeatureItem(
+        title: appLocalizations.translate('doseAlert'),
+        subtitle: appLocalizations.translate('medicationReminders'),
+        icon: Icons.medication_outlined,
+        color: AppColors.tertiaryColor,
+        route: const DoseAlertScreen(),
+      ),
+    ];
   }
 
   @override
   void dispose() {
     _controller.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final appLocalizations = AppLocalizations.of(context);
     return SafeArea(
-      child: SingleChildScrollView(
+      child: CustomScrollView(
+        controller: _scrollController,
         physics: const BouncingScrollPhysics(),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildHeader(),
-            const SizedBox(height: 24),
-            _buildSectionTitle('Health Services'),
-            const SizedBox(height: 20),
-            _buildFeaturesList(),
-            const SizedBox(height: 24),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHeader() {
-    return Container(
-      padding: const EdgeInsets.all(24.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Welcome back,',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.white.withOpacity(0.9),
-                ),
-              ),
-              const SizedBox(height: 4),
-              const Text(
-                'John Doe',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-            ],
+        slivers: [
+          SliverToBoxAdapter(
+            child: _buildHeader(appLocalizations),
           ),
-          GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                PageRouteBuilder(
-                  pageBuilder: (context, animation, secondaryAnimation) => const ProfileScreen(),
-                  transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                    return FadeTransition(
-                      opacity: animation,
-                      child: child,
-                    );
-                  },
-                  transitionDuration: const Duration(milliseconds: 500),
-                ),
-              );
-            },
-            child: Hero(
-              tag: 'profile_avatar',
-              child: Container(
-                padding: const EdgeInsets.all(2),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: Colors.white.withOpacity(0.2),
-                    width: 2,
-                  ),
-                ),
-                child: Container(
-                  padding: const EdgeInsets.all(2),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white.withOpacity(0.1),
-                  ),
-                  child: const CircleAvatar(
-                    radius: 24,
-                    backgroundColor: Colors.transparent,
-                    child: Icon(
-                      Icons.person_outline,
-                      color: Colors.white,
-                      size: 28,
-                    ),
-                  ),
-                ),
-              ),
-            ),
+          SliverToBoxAdapter(
+            child: _buildQuickActions(appLocalizations),
+          ),
+          SliverToBoxAdapter(
+            child: _buildSectionHeader(appLocalizations.translate('healthcareServices')),
+          ),
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(24, 0, 24, 100),
+            sliver: _buildFeaturesList(),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildSectionTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Text(
-        title,
-        style: TextStyle(
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
-          shadows: [
-            Shadow(
-              color: Colors.black.withOpacity(0.1),
-              offset: const Offset(0, 2),
-              blurRadius: 4,
+  Widget _buildHeader(AppLocalizations appLocalizations) {
+    final size = MediaQuery.of(context).size;
+    
+    return SlideTransition(
+      position: _slideAnimation,
+      child: FadeTransition(
+        opacity: _fadeAnimation,
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(24, 30, 24, 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: AppColors.accentColor.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: AppColors.tertiaryColor.withOpacity(0.3),
+                      width: 1.5,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primaryColor.withOpacity(0.2),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.health_and_safety,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        appLocalizations.translate('appTitle'),
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          letterSpacing: 2,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 40),
+              SizedBox(
+                width: size.width * 0.8,
+                child: Text(
+                  appLocalizations.translate('empoweringWellness'),
+                  style: const TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                    height: 1.2,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQuickActions(AppLocalizations appLocalizations) {
+    return SlideTransition(
+      position: _slideAnimation,
+      child: FadeTransition(
+        opacity: _fadeAnimation,
+        child: Container(
+          margin: const EdgeInsets.fromLTRB(24, 20, 24, 30),
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Colors.white.withOpacity(0.15),
+                Colors.white.withOpacity(0.05),
+              ],
             ),
-          ],
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: AppColors.tertiaryColor.withOpacity(0.3),
+              width: 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 15,
+                offset: const Offset(0, 5),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.accentColor.withOpacity(0.2),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: AppColors.accentColor.withOpacity(0.3),
+                        width: 1.5,
+                      ),
+                    ),
+                    child: Icon(
+                      Icons.favorite_rounded,
+                      color: Colors.white.withOpacity(0.9),
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          appLocalizations.translate('welcomeBack'),
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white.withOpacity(0.95),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          appLocalizations.translate('havingGreatDay'),
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.white.withOpacity(0.7),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryColor.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: AppColors.tertiaryColor.withOpacity(0.3),
+                    width: 1,
+                  ),
+                ),
+                child: Text(
+                  appLocalizations.translate('healthPriority'),
+                  style: TextStyle(
+                    fontSize: 14,
+                    height: 1.5,
+                    color: Colors.white.withOpacity(0.85),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title) {
+    return SlideTransition(
+      position: _slideAnimation,
+      child: FadeTransition(
+        opacity: _fadeAnimation,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+          child: Text(
+            title,
+            style: const TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
         ),
       ),
     );
   }
 
   Widget _buildFeaturesList() {
-    return ListView.separated(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      physics: const NeverScrollableScrollPhysics(),
-      shrinkWrap: true,
-      itemCount: _features.length,
-      separatorBuilder: (context, index) => const SizedBox(height: 16),
-      itemBuilder: (context, index) {
-        final animation = CurvedAnimation(
-          parent: _controller,
-          curve: Interval(
-            0.4 + (index * 0.1),
-            1.0,
-            curve: Curves.easeOut,
-          ),
-        );
-        return _buildFeatureCard(context, _features[index], animation);
-      },
+    return SliverList(
+      delegate: SliverChildBuilderDelegate(
+        (context, index) {
+          final animation = CurvedAnimation(
+            parent: _controller,
+            curve: Interval(
+              0.4 + (index * 0.1),
+              1.0,
+              curve: Curves.easeOutCubic,
+            ),
+          );
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: _buildFeatureCard(context, _features[index], animation),
+          );
+        },
+        childCount: _features.length,
+      ),
     );
   }
 
@@ -317,38 +531,44 @@ class _HomeContentState extends State<_HomeContent> with SingleTickerProviderSta
     FeatureItem feature,
     Animation<double> animation,
   ) {
-    return SlideTransition(
-      position: Tween<Offset>(
-        begin: const Offset(0.2, 0),
-        end: Offset.zero,
+    return ScaleTransition(
+      scale: Tween<double>(
+        begin: 0.8,
+        end: 1.0,
       ).animate(animation),
       child: FadeTransition(
         opacity: animation,
         child: GestureDetector(
           onTap: () => _onFeaturePressed(context, feature),
           child: Container(
-            height: 100,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(20),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  feature.color.withOpacity(0.2),
+                  feature.color.withOpacity(0.1),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(24),
               border: Border.all(
-                color: Colors.white.withOpacity(0.2),
-                width: 1,
+                color: feature.color.withOpacity(0.3),
+                width: 1.5,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 8,
+                  color: feature.color.withOpacity(0.2),
+                  blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
               ],
             ),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(24),
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  padding: const EdgeInsets.all(20),
                   child: Row(
                     children: [
                       Container(
@@ -358,12 +578,19 @@ class _HomeContentState extends State<_HomeContent> with SingleTickerProviderSta
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
                             color: feature.color.withOpacity(0.3),
-                            width: 1,
+                            width: 1.5,
                           ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: feature.color.withOpacity(0.2),
+                              blurRadius: 8,
+                              spreadRadius: 1,
+                            ),
+                          ],
                         ),
                         child: Icon(
                           feature.icon,
-                          size: 30,
+                          size: 28,
                           color: Colors.white,
                         ),
                       ),
@@ -371,7 +598,7 @@ class _HomeContentState extends State<_HomeContent> with SingleTickerProviderSta
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
                               feature.title,
@@ -395,11 +622,15 @@ class _HomeContentState extends State<_HomeContent> with SingleTickerProviderSta
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.1),
+                          color: feature.color.withOpacity(0.2),
                           borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: feature.color.withOpacity(0.3),
+                            width: 1,
+                          ),
                         ),
                         child: Icon(
-                          Icons.arrow_forward_ios_rounded,
+                          Icons.arrow_forward_rounded,
                           color: Colors.white.withOpacity(0.9),
                           size: 16,
                         ),
@@ -417,12 +648,38 @@ class _HomeContentState extends State<_HomeContent> with SingleTickerProviderSta
 
   void _onFeaturePressed(BuildContext context, FeatureItem feature) {
     if (feature.route != null) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => feature.route!),
+      context.pushWithTransition(
+        feature.route!,
+        transitionType: 'scale',
       );
     }
   }
+}
+
+class BackgroundPatternPainter extends CustomPainter {
+  final Color color;
+
+  BackgroundPatternPainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0;
+
+    final double spacing = 40;
+    final double radius = 5;
+
+    for (double x = 0; x < size.width; x += spacing) {
+      for (double y = 0; y < size.height; y += spacing) {
+        canvas.drawCircle(Offset(x, y), radius, paint);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 class FeatureItem {

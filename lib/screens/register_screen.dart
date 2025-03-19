@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
+import '../theme/app_colors.dart';
 import 'login_screen.dart';
+import '../utils/page_transition.dart';
+import '../l10n/app_localizations.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({Key? key}) : super(key: key);
@@ -71,7 +74,7 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
         borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: AppColors.primaryColor.withOpacity(0.05),
             blurRadius: 15,
             offset: const Offset(0, 5),
           ),
@@ -79,7 +82,7 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
       ),
       child: TextField(
         style: const TextStyle(
-          color: Color(0xFF2D3142),
+          color: AppColors.textPrimary,
           fontSize: 16,
           fontWeight: FontWeight.w500,
         ),
@@ -88,7 +91,7 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
         decoration: InputDecoration(
           hintText: hintText,
           hintStyle: TextStyle(color: Colors.grey[400], fontSize: 15),
-          prefixIcon: Icon(icon, color: const Color(0xFF1976D2), size: 22),
+          prefixIcon: Icon(icon, color: AppColors.primaryColor, size: 22),
           suffixIcon: suffixIcon,
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
@@ -99,6 +102,9 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final appLocalizations = AppLocalizations.of(context);
+    
     return Scaffold(
       body: Stack(
         children: [
@@ -108,11 +114,7 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFF1E88E5),  // Light blue
-                  Color(0xFF1976D2),  // Blue
-                  Color(0xFF1565C0),  // Dark blue
-                ],
+                colors: AppColors.primaryGradient,
               ),
             ),
           ),
@@ -123,9 +125,34 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  Colors.white.withOpacity(0.1),
-                  Colors.white.withOpacity(0.15),
+                  AppColors.accentColor.withOpacity(0.05),
+                  AppColors.tertiaryColor.withOpacity(0.1),
                 ],
+              ),
+            ),
+          ),
+          // Decorative elements
+          Positioned(
+            top: -size.width * 0.2,
+            right: -size.width * 0.2,
+            child: Container(
+              width: size.width * 0.7,
+              height: size.width * 0.7,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.accentColor.withOpacity(0.2),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: -size.width * 0.15,
+            left: -size.width * 0.15,
+            child: Container(
+              width: size.width * 0.5,
+              height: size.width * 0.5,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.tertiaryColor.withOpacity(0.2),
               ),
             ),
           ),
@@ -142,16 +169,18 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
                       opacity: _fadeAnimation,
                       child: Container(
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.1),
+                          color: AppColors.accentColor.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: Colors.white.withOpacity(0.2),
+                            color: AppColors.tertiaryColor.withOpacity(0.3),
                             width: 1,
                           ),
                         ),
                         child: IconButton(
                           icon: Icon(Icons.arrow_back, color: Colors.white.withOpacity(0.9)),
-                          onPressed: () => Navigator.pop(context),
+                          onPressed: () {
+                            Navigator.pop(context);
+                          },
                         ),
                       ),
                     ),
@@ -165,14 +194,14 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
                           child: Column(
                             children: [
                               Text(
-                                'Create Account',
+                                appLocalizations.translate('createAccount'),
                                 style: TextStyle(
                                   fontSize: 32,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.white,
                                   shadows: [
                                     Shadow(
-                                      color: Colors.black.withOpacity(0.1),
+                                      color: Colors.black.withOpacity(0.2),
                                       offset: const Offset(0, 2),
                                       blurRadius: 4,
                                     ),
@@ -180,11 +209,23 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
                                 ),
                               ),
                               const SizedBox(height: 8),
-                              Text(
-                                'Join our healthcare community',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.white.withOpacity(0.9),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: AppColors.accentColor.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: AppColors.tertiaryColor.withOpacity(0.3),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Text(
+                                  appLocalizations.translate('joinCommunity'),
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.white.withOpacity(0.95),
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
                               ),
                             ],
@@ -205,40 +246,50 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
                             borderRadius: BorderRadius.circular(25),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
+                                color: AppColors.primaryColor.withOpacity(0.15),
                                 blurRadius: 20,
                                 offset: const Offset(0, 10),
                               ),
                             ],
+                            border: Border.all(
+                              color: AppColors.tertiaryColor.withOpacity(0.5),
+                              width: 1.5,
+                            ),
                           ),
                           child: Column(
                             children: [
                               _buildTextField(
-                                hintText: 'Full Name',
+                                hintText: appLocalizations.translate('fullName'),
                                 icon: Icons.person_outline,
                                 inputType: TextInputType.name,
                               ),
                               const SizedBox(height: 20),
                               _buildTextField(
-                                hintText: 'Email',
+                                hintText: appLocalizations.translate('email'),
                                 icon: Icons.email_outlined,
                                 inputType: TextInputType.emailAddress,
                               ),
                               const SizedBox(height: 20),
                               _buildTextField(
-                                hintText: 'Phone Number',
+                                hintText: appLocalizations.translate('phoneNumber'),
                                 icon: Icons.phone_outlined,
                                 inputType: TextInputType.phone,
                               ),
                               const SizedBox(height: 20),
                               _buildTextField(
-                                hintText: 'Password',
+                                hintText: appLocalizations.translate('nationalNumber'),
+                                icon: Icons.credit_card_outlined,
+                                inputType: TextInputType.number,
+                              ),
+                              const SizedBox(height: 20),
+                              _buildTextField(
+                                hintText: appLocalizations.translate('password'),
                                 icon: Icons.lock_outline,
                                 isPassword: true,
                                 suffixIcon: IconButton(
                                   icon: Icon(
                                     _isPasswordVisible ? Icons.visibility_off : Icons.visibility,
-                                    color: const Color(0xFF1976D2),
+                                    color: AppColors.primaryColor,
                                   ),
                                   onPressed: () {
                                     setState(() {
@@ -249,13 +300,13 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
                               ),
                               const SizedBox(height: 20),
                               _buildTextField(
-                                hintText: 'Confirm Password',
+                                hintText: appLocalizations.translate('confirmPassword'),
                                 icon: Icons.lock_outline,
                                 isPassword: true,
                                 suffixIcon: IconButton(
                                   icon: Icon(
                                     _isConfirmPasswordVisible ? Icons.visibility_off : Icons.visibility,
-                                    color: const Color(0xFF1976D2),
+                                    color: AppColors.primaryColor,
                                   ),
                                   onPressed: () {
                                     setState(() {
@@ -272,20 +323,23 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
                                 child: ElevatedButton(
                                   onPressed: () {
                                     // TODO: Implement registration
-                                    Navigator.pop(context);
+                                    context.pushReplacementWithTransition(
+                                      const LoginScreen(),
+                                      transitionType: 'slide_down',
+                                    );
                                   },
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF1976D2),
+                                    backgroundColor: AppColors.primaryColor,
                                     foregroundColor: Colors.white,
                                     elevation: 8,
-                                    shadowColor: const Color(0xFF1976D2).withOpacity(0.5),
+                                    shadowColor: AppColors.primaryColor.withOpacity(0.5),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(15),
                                     ),
                                   ),
-                                  child: const Text(
-                                    'Sign Up',
-                                    style: TextStyle(
+                                  child: Text(
+                                    appLocalizations.translate('signUp'),
+                                    style: const TextStyle(
                                       fontSize: 18,
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -300,25 +354,41 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
                     const SizedBox(height: 24),
                     // Login Link
                     Center(
-                      child: TextButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                        },
-                        child: RichText(
-                          text: TextSpan(
-                            text: 'Already have an account? ',
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.7),
-                            ),
-                            children: [
-                              TextSpan(
-                                text: 'Sign In',
-                                style: TextStyle(
-                                  color: Colors.white.withOpacity(0.95),
-                                  fontWeight: FontWeight.bold,
-                                ),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: AppColors.accentColor.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: AppColors.tertiaryColor.withOpacity(0.3),
+                            width: 1,
+                          ),
+                        ),
+                        child: TextButton(
+                          onPressed: () {
+                            Navigator.pop(context);
+                          },
+                          style: TextButton.styleFrom(
+                            padding: EdgeInsets.zero,
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          child: RichText(
+                            text: TextSpan(
+                              text: appLocalizations.translate('alreadyHaveAccount'),
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.8),
                               ),
-                            ],
+                              children: [
+                                TextSpan(
+                                  text: appLocalizations.translate('signIn'),
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),

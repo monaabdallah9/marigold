@@ -1,5 +1,25 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
+import '../theme/app_colors.dart';
+import '../l10n/app_localizations.dart';
+
+class DoseAlert {
+  final String medication;
+  final String dosage;
+  final TimeOfDay time;
+  final String frequency;
+  final String instructions;
+  final bool isActive;
+
+  DoseAlert({
+    required this.medication,
+    required this.dosage,
+    required this.time,
+    required this.frequency,
+    required this.instructions,
+    this.isActive = true,
+  });
+}
 
 class DoseAlertScreen extends StatefulWidget {
   const DoseAlertScreen({super.key});
@@ -8,168 +28,116 @@ class DoseAlertScreen extends StatefulWidget {
   State<DoseAlertScreen> createState() => _DoseAlertScreenState();
 }
 
-class _DoseAlertScreenState extends State<DoseAlertScreen> {
-  List<MedicationTime> _medications = [];
-  TimeOfDay _selectedTime = TimeOfDay.now();
-  List<bool> _selectedDays = List.generate(7, (index) => false);
+class _DoseAlertScreenState extends State<DoseAlertScreen> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+  final List<DoseAlert> _alerts = [];
 
-  void _addMedication() {
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 1200),
+      vsync: this,
+    )..forward();
+
+    _fadeAnimation = CurvedAnimation(
+      parent: _controller,
+      curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
+    );
+
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _controller,
+      curve: const Interval(0.2, 0.7, curve: Curves.easeOutCubic),
+    ));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _showAddAlertDialog() async {
+    final formKey = GlobalKey<FormState>();
+    String medication = '';
+    String dosage = '';
+    TimeOfDay selectedTime = TimeOfDay.now();
+    String frequency = '';
+    String instructions = '';
+    final appLocalizations = AppLocalizations.of(context);
+
     showDialog(
       context: context,
-      builder: (BuildContext context) {
-        String medicineName = '';
-        String dosage = '';
-        TimeOfDay selectedTime = _selectedTime;
-        List<bool> selectedDays = List.generate(7, (index) => false);
-        
-        Widget _buildDialogDayButton(String label, int index, StateSetter setState) {
-          return GestureDetector(
-            onTap: () => setState(() => selectedDays[index] = !selectedDays[index]),
-            child: Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: selectedDays[index] ? const Color(0xFF1976D2) : Colors.transparent,
-                border: Border.all(color: const Color(0xFF1976D2)),
-                shape: BoxShape.circle,
-              ),
-              child: Center(
-                child: Text(
-                  label,
-                  style: TextStyle(
-                    color: selectedDays[index] ? Colors.white : const Color(0xFF1976D2),
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-          );
-        }
-
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return Dialog(
+      builder: (context) => Dialog(
               backgroundColor: Colors.transparent,
-              insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-              child: SingleChildScrollView(
                 child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [
-                        Colors.white.withOpacity(0.95),
-                        Colors.white.withOpacity(0.90),
+                AppColors.primaryColor,
+                AppColors.secondaryColor.withOpacity(0.9),
                       ],
                     ),
                     borderRadius: BorderRadius.circular(24),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
-                        blurRadius: 20,
-                        offset: const Offset(0, 10),
-                      ),
-                    ],
-                  ),
+            border: Border.all(
+              color: AppColors.tertiaryColor.withOpacity(0.3),
+              width: 1.5,
+            ),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Container(
+                padding: const EdgeInsets.all(24),
+                child: Form(
+                  key: formKey,
+                  child: SingleChildScrollView(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
                         children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF1976D2).withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Icon(
-                              Icons.medication_outlined,
-                              color: Color(0xFF1976D2),
-                              size: 24,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          const Text(
-                            'Add Medication',
-                            style: TextStyle(
+                          Text(
+                            appLocalizations.translate('addMedicationAlert'),
+                            style: const TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.bold,
-                              color: Color(0xFF1976D2),
-                            ),
+                            color: Colors.white,
                           ),
-                        ],
                       ),
                       const SizedBox(height: 24),
-                      TextField(
-                        onChanged: (value) => medicineName = value,
-                        decoration: InputDecoration(
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                          hintText: 'Medicine Name',
-                          prefixIcon: const Icon(Icons.medication, color: Color(0xFF1976D2)),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: Color(0xFF1976D2)),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: Color(0xFF1976D2), width: 2),
-                          ),
-                          filled: true,
-                          fillColor: const Color(0xFF1976D2).withOpacity(0.05),
-                          isDense: true,
-                        ),
+                        _buildDialogTextField(
+                          label: appLocalizations.translate('medicationName'),
+                          icon: Icons.medication_outlined,
+                          onChanged: (value) => medication = value,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return appLocalizations.translate('enterMedicationName');
+                            }
+                            return null;
+                          },
                       ),
                       const SizedBox(height: 16),
-                      TextField(
+                        _buildDialogTextField(
+                          label: appLocalizations.translate('dosage'),
+                          icon: Icons.medical_information_outlined,
                         onChanged: (value) => dosage = value,
-                        decoration: InputDecoration(
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                          hintText: 'Dosage (e.g., 1 pill)',
-                          prefixIcon: const Icon(Icons.medical_information, color: Color(0xFF1976D2)),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: Color(0xFF1976D2)),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: Color(0xFF1976D2), width: 2),
-                          ),
-                          filled: true,
-                          fillColor: const Color(0xFF1976D2).withOpacity(0.05),
-                          isDense: true,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return appLocalizations.translate('enterDosage');
+                            }
+                            return null;
+                          },
                         ),
-                      ),
-                      const SizedBox(height: 24),
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF1976D2).withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Icon(
-                              Icons.access_time,
-                              color: Color(0xFF1976D2),
-                              size: 20,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          const Text(
-                            'Time',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF1976D2),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      InkWell(
+                        const SizedBox(height: 16),
+                        StatefulBuilder(
+                          builder: (context, setState) => InkWell(
                         onTap: () async {
                           final TimeOfDay? picked = await showTimePicker(
                             context: context,
@@ -177,11 +145,18 @@ class _DoseAlertScreenState extends State<DoseAlertScreen> {
                             builder: (context, child) {
                               return Theme(
                                 data: Theme.of(context).copyWith(
-                                  colorScheme: const ColorScheme.light(
-                                    primary: Color(0xFF1976D2),
-                                    onPrimary: Colors.white,
-                                    surface: Colors.white,
-                                    onSurface: Colors.black,
+                                      timePickerTheme: TimePickerThemeData(
+                                        backgroundColor: AppColors.primaryColor,
+                                        hourMinuteTextColor: Colors.white,
+                                        dialHandColor: AppColors.accentColor,
+                                        dialBackgroundColor: Colors.white.withOpacity(0.1),
+                                        dialTextColor: Colors.white,
+                                        entryModeIconColor: Colors.white,
+                                      ),
+                                      textButtonTheme: TextButtonThemeData(
+                                        style: TextButton.styleFrom(
+                                          foregroundColor: Colors.white,
+                                        ),
                                   ),
                                 ),
                                 child: child!,
@@ -189,86 +164,61 @@ class _DoseAlertScreenState extends State<DoseAlertScreen> {
                             },
                           );
                           if (picked != null) {
-                            setState(() {
-                              selectedTime = picked;
-                            });
+                                setState(() => selectedTime = picked);
                           }
                         },
                         child: Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF1976D2).withOpacity(0.05),
-                            border: Border.all(color: const Color(0xFF1976D2)),
+                                color: Colors.white.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                selectedTime.format(context),
-                                style: const TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF1976D2),
+                                border: Border.all(
+                                  color: AppColors.tertiaryColor.withOpacity(0.3),
                                 ),
                               ),
-                              const SizedBox(width: 12),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF1976D2).withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Text(
-                                  selectedTime.period == DayPeriod.am ? 'AM' : 'PM',
-                                  style: const TextStyle(
-                                    color: Color(0xFF1976D2),
-                                    fontWeight: FontWeight.bold,
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.access_time_outlined,
+                                    color: Colors.white.withOpacity(0.7),
                                   ),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    '${appLocalizations.translate('time')}: ${selectedTime.format(context)}',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
                                 ),
                               ),
                             ],
                           ),
                         ),
                       ),
-                      const SizedBox(height: 24),
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF1976D2).withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Icon(
-                              Icons.calendar_today,
-                              color: Color(0xFF1976D2),
-                              size: 20,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          const Text(
-                            'Repeat',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF1976D2),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          _buildDialogDayButton('M', 0, setState),
-                          _buildDialogDayButton('T', 1, setState),
-                          _buildDialogDayButton('W', 2, setState),
-                          _buildDialogDayButton('T', 3, setState),
-                          _buildDialogDayButton('F', 4, setState),
-                          _buildDialogDayButton('S', 5, setState),
-                          _buildDialogDayButton('S', 6, setState),
-                        ],
+                        ),
+                        const SizedBox(height: 16),
+                        _buildDialogTextField(
+                          label: appLocalizations.translate('frequency'),
+                          icon: Icons.repeat_outlined,
+                          onChanged: (value) => frequency = value,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return appLocalizations.translate('enterFrequency');
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        _buildDialogTextField(
+                          label: appLocalizations.translate('instructions'),
+                          icon: Icons.info_outline,
+                          onChanged: (value) => instructions = value,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return appLocalizations.translate('enterDescription');
+                            }
+                            return null;
+                          },
+                          maxLines: 2,
                       ),
                       const SizedBox(height: 24),
                       Row(
@@ -276,85 +226,188 @@ class _DoseAlertScreenState extends State<DoseAlertScreen> {
                         children: [
                           TextButton(
                             onPressed: () => Navigator.pop(context),
-                            style: TextButton.styleFrom(
-                              foregroundColor: Colors.grey,
-                            ),
-                            child: const Text('Cancel'),
+                              child: Text(
+                                appLocalizations.translate('cancel'),
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.7),
+                                ),
+                              ),
                           ),
                           const SizedBox(width: 16),
                           ElevatedButton(
                             onPressed: () {
-                              if (medicineName.isNotEmpty && dosage.isNotEmpty) {
+                                if (formKey.currentState!.validate()) {
                                 setState(() {
-                                  _medications.add(MedicationTime(
-                                    name: medicineName,
+                                    _alerts.add(DoseAlert(
+                                      medication: medication,
+                                      dosage: dosage,
                                     time: selectedTime,
-                                    dosage: dosage,
-                                    weeklySchedule: List.from(selectedDays),
+                                      frequency: frequency,
+                                      instructions: instructions,
                                   ));
-                                  _medications.sort((a, b) => 
-                                    (a.time.hour * 60 + a.time.minute)
-                                    .compareTo(b.time.hour * 60 + b.time.minute));
                                 });
                                 Navigator.pop(context);
-                                this.setState(() {});
                               }
                             },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF1976D2),
+                                backgroundColor: AppColors.accentColor,
+                                foregroundColor: AppColors.primaryColor,
                               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
                             ),
-                            child: const Text(
-                              'Add Medication',
-                              style: TextStyle(fontSize: 16),
-                            ),
+                            child: Text(
+                                appLocalizations.translate('addMedication'),
+                                style: const TextStyle(fontWeight: FontWeight.bold),
+                              ),
                           ),
                         ],
                       ),
                     ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
                   ),
                 ),
               ),
             );
-          },
-        );
-      },
+  }
+
+  Widget _buildDialogTextField({
+    required String label,
+    required IconData icon,
+    required void Function(String) onChanged,
+    required String? Function(String?) validator,
+    int maxLines = 1,
+  }) {
+    return TextFormField(
+      onChanged: onChanged,
+      validator: validator,
+      maxLines: maxLines,
+      style: const TextStyle(color: Colors.white),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
+        prefixIcon: Icon(icon, color: Colors.white.withOpacity(0.7)),
+        filled: true,
+        fillColor: Colors.white.withOpacity(0.1),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: AppColors.tertiaryColor.withOpacity(0.3)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: AppColors.tertiaryColor.withOpacity(0.3)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: AppColors.accentColor.withOpacity(0.5)),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.red),
+        ),
+        errorStyle: const TextStyle(color: Colors.red),
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
+    final appLocalizations = AppLocalizations.of(context);
+    return Scaffold(
+      body: Stack(
+        children: [
+          // Background gradient
+          Container(
+            decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Color(0xFF1E88E5),
-            Color(0xFF1976D2),
-            Color(0xFF1565C0),
+                  AppColors.primaryColor,
+                  AppColors.secondaryColor.withOpacity(0.9),
+                ],
+                stops: const [0.3, 1.0],
+              ),
+            ),
+          ),
+          // Decorative elements
+          Positioned(
+            top: -100,
+            right: -100,
+            child: Container(
+              width: 300,
+              height: 300,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    AppColors.accentColor.withOpacity(0.2),
+                    AppColors.accentColor.withOpacity(0.0),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: -80,
+            left: -80,
+            child: Container(
+              width: 200,
+              height: 200,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    AppColors.tertiaryColor.withOpacity(0.2),
+                    AppColors.tertiaryColor.withOpacity(0.0),
           ],
         ),
       ),
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          title: const Text(
-            'Medication Times',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
             ),
           ),
-          centerTitle: true,
+          // Main content
+          SafeArea(
+            child: Column(
+              children: [
+                // App Bar
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    children: [
+                      Container(
+                        decoration: BoxDecoration(
+                          color: AppColors.accentColor.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: AppColors.tertiaryColor.withOpacity(0.3),
+                            width: 1,
+                          ),
+                        ),
+                        child: IconButton(
+                          icon: Icon(Icons.arrow_back, color: Colors.white.withOpacity(0.9)),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Text(
+                        appLocalizations.translate('doseAlert'),
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
         ),
-        body: _medications.isEmpty
+                // Main Content
+                Expanded(
+                  child: _alerts.isEmpty
             ? Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -366,202 +419,346 @@ class _DoseAlertScreenState extends State<DoseAlertScreen> {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'No medications added yet',
+                      appLocalizations.translate('noMedicationAlertsYet'),
                       style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
                         color: Colors.white.withOpacity(0.7),
-                        fontSize: 18,
                       ),
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Tap + to add your first medication',
+                      appLocalizations.translate('addFirstAlertPrompt'),
                       style: TextStyle(
+                        fontSize: 16,
                         color: Colors.white.withOpacity(0.5),
-                        fontSize: 14,
                       ),
                     ),
                   ],
                 ),
               )
-            : ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: _medications.length,
-                itemBuilder: (context, index) {
-                  final med = _medications[index];
-                  return Dismissible(
-                    key: Key(med.name + med.time.toString()),
-                    background: Container(
-                      margin: const EdgeInsets.symmetric(vertical: 8),
+                      : SingleChildScrollView(
+                          physics: const BouncingScrollPhysics(),
+                          padding: const EdgeInsets.all(24),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Header Section
+                              SlideTransition(
+                                position: _slideAnimation,
+                                child: FadeTransition(
+                                  opacity: _fadeAnimation,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
-                        color: Colors.red.withOpacity(0.8),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      alignment: Alignment.centerRight,
-                      padding: const EdgeInsets.only(right: 20),
-                      child: const Icon(Icons.delete, color: Colors.white),
-                    ),
-                    direction: DismissDirection.endToStart,
-                    onDismissed: (direction) {
-                      setState(() {
-                        _medications.removeAt(index);
-                      });
-                    },
-                    child: Container(
-                      margin: const EdgeInsets.symmetric(vertical: 8),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(16),
+                                      gradient: LinearGradient(
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                        colors: [
+                                          Colors.white.withOpacity(0.15),
+                                          Colors.white.withOpacity(0.05),
+                                        ],
+                                      ),
+                                      borderRadius: BorderRadius.circular(24),
                         border: Border.all(
-                          color: Colors.white.withOpacity(0.2),
-                          width: 1,
-                        ),
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(16),
-                        child: BackdropFilter(
-                          filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                          child: ListTile(
-                            contentPadding: const EdgeInsets.all(16),
-                            leading: Container(
+                                        color: AppColors.tertiaryColor.withOpacity(0.3),
+                                        width: 1.5,
+                                      ),
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Container(
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(12),
+                                                color: AppColors.accentColor.withOpacity(0.2),
+                                                shape: BoxShape.circle,
                               ),
                               child: const Icon(
-                                Icons.medication,
+                                                Icons.medication_outlined,
+                                                color: Colors.white,
+                                                size: 24,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 16),
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    appLocalizations.translate('medicationRemindersTitle'),
+                                                    style: const TextStyle(
+                                                      fontSize: 20,
+                                                      fontWeight: FontWeight.bold,
                                 color: Colors.white,
                               ),
                             ),
-                            title: Text(
-                              med.name,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const SizedBox(height: 8),
-                                Row(
-                                  children: [
-                                    Icon(
-                                      Icons.medical_information,
-                                      size: 16,
-                                      color: Colors.white.withOpacity(0.7),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      'Dosage: ${med.dosage}',
-                                      style: TextStyle(
-                                        color: Colors.white.withOpacity(0.7),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 4),
-                                Row(
-                                  children: [
-                                    Icon(
-                                      Icons.access_time,
-                                      size: 16,
-                                      color: Colors.white.withOpacity(0.7),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      'Time: ${med.time.format(context)}',
-                                      style: TextStyle(
-                                        color: Colors.white.withOpacity(0.7),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 8),
-                                Row(
-                                  children: [
-                                    Icon(
-                                      Icons.calendar_today,
-                                      size: 16,
-                                      color: Colors.white.withOpacity(0.7),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    ...List.generate(7, (index) {
-                                      final days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-                                      return Container(
-                                        margin: const EdgeInsets.only(right: 4),
-                                        padding: const EdgeInsets.all(4),
-                                        decoration: BoxDecoration(
-                                          color: med.weeklySchedule[index]
-                                              ? Colors.white.withOpacity(0.2)
-                                              : Colors.transparent,
-                                          borderRadius: BorderRadius.circular(4),
+                                                  const SizedBox(height: 4),
+                                                  Text(
+                                                    appLocalizations.translate('neverMissMedications'),
+                                                    style: const TextStyle(
+                                                      fontSize: 14,
+                                                      color: Colors.white70,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
                                         ),
-                                        child: Text(
-                                          days[index],
-                                          style: TextStyle(
-                                            color: med.weeklySchedule[index]
-                                                ? Colors.white
-                                                : Colors.white.withOpacity(0.4),
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.bold,
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+                              // Alerts List
+                              ...List.generate(_alerts.length, (index) {
+                                final alert = _alerts[index];
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 16),
+                                  child: Dismissible(
+                                    key: Key(alert.medication + alert.time.toString()),
+                                    direction: DismissDirection.endToStart,
+                                    background: Container(
+                                      alignment: Alignment.centerRight,
+                                      padding: const EdgeInsets.only(right: 20),
+                                      decoration: BoxDecoration(
+                                        color: Colors.red.withOpacity(0.2),
+                                        borderRadius: BorderRadius.circular(24),
+                                      ),
+                                      child: const Icon(
+                                        Icons.delete_outline,
+                                        color: Colors.red,
+                                      ),
+                                    ),
+                                    onDismissed: (direction) {
+                                      setState(() {
+                                        _alerts.removeAt(index);
+                                      });
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text(appLocalizations.translate('alertRemoved')),
+                                          backgroundColor: AppColors.primaryColor,
+                                        ),
+                                      );
+                                    },
+                                    child: SlideTransition(
+                                      position: Tween<Offset>(
+                                        begin: const Offset(0, 0.3),
+                                        end: Offset.zero,
+                                      ).animate(CurvedAnimation(
+                                        parent: _controller,
+                                        curve: Interval(
+                                          0.2 + (index * 0.1),
+                                          0.7 + (index * 0.1),
+                                          curve: Curves.easeOutCubic,
+                                        ),
+                                      )),
+                                      child: FadeTransition(
+                                        opacity: CurvedAnimation(
+                                          parent: _controller,
+                                          curve: Interval(
+                                            0.2 + (index * 0.1),
+                                            0.7 + (index * 0.1),
+                                            curve: Curves.easeOut,
+                                          ),
+                                        ),
+                                        child: Container(
+                                          padding: const EdgeInsets.all(20),
+                                          decoration: BoxDecoration(
+                                            color: Colors.white.withOpacity(0.1),
+                                            borderRadius: BorderRadius.circular(24),
+                                            border: Border.all(
+                                              color: AppColors.tertiaryColor.withOpacity(0.3),
+                                              width: 1.5,
+                                            ),
+                                          ),
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Row(
+                                                children: [
+                                                  Container(
+                                                    padding: const EdgeInsets.all(10),
+                                                    decoration: BoxDecoration(
+                                                      color: AppColors.accentColor.withOpacity(0.2),
+                                                      borderRadius: BorderRadius.circular(12),
+                                                    ),
+                                                    child: Icon(
+                                                      Icons.medication_outlined,
+                                                      color: alert.isActive ? Colors.white : Colors.white.withOpacity(0.5),
+                                                      size: 20,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 12),
+                                                  Expanded(
+                                                    child: Column(
+                                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                                      children: [
+                                                        Text(
+                                                          alert.medication,
+                                                          style: TextStyle(
+                                                            fontSize: 16,
+                                                            fontWeight: FontWeight.bold,
+                                                            color: alert.isActive ? Colors.white : Colors.white.withOpacity(0.5),
+                                                          ),
+                                                        ),
+                                                        const SizedBox(height: 4),
+                                                        Text(
+                                                          '${alert.dosage} • ${alert.frequency}',
+                                                          style: TextStyle(
+                                                            fontSize: 14,
+                                                            color: alert.isActive ? Colors.white70 : Colors.white30,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                  Switch(
+                                                    value: alert.isActive,
+                                                    onChanged: (value) {
+                                                      setState(() {
+                                                        _alerts[index] = DoseAlert(
+                                                          medication: alert.medication,
+                                                          dosage: alert.dosage,
+                                                          time: alert.time,
+                                                          frequency: alert.frequency,
+                                                          instructions: alert.instructions,
+                                                          isActive: value,
+                                                        );
+                                                      });
+                                                    },
+                                                    activeColor: AppColors.accentColor,
+                                                    inactiveThumbColor: Colors.white.withOpacity(0.3),
+                                                    inactiveTrackColor: Colors.white.withOpacity(0.1),
+                                    ),
+                                  ],
+                                ),
+                                              const SizedBox(height: 16),
+                                              Container(
+                                                padding: const EdgeInsets.all(12),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.white.withOpacity(0.05),
+                                                  borderRadius: BorderRadius.circular(12),
+                                                ),
+                                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.access_time_outlined,
+                                      size: 16,
+                                      color: alert.isActive ? Colors.white70 : Colors.white30,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      '${alert.time.hour.toString().padLeft(2, '0')}:${alert.time.minute.toString().padLeft(2, '0')}',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: alert.isActive ? Colors.white70 : Colors.white30,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 16),
+                                    Icon(
+                                      Icons.info_outline,
+                                      size: 16,
+                                      color: alert.isActive ? Colors.white70 : Colors.white30,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        alert.instructions,
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: alert.isActive ? Colors.white70 : Colors.white30,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
                                           ),
                                         ),
                                       );
                                     }),
                                   ],
-                                ),
-                              ],
-                            ),
                           ),
                         ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-        floatingActionButton: Container(
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+      floatingActionButton: SlideTransition(
+        position: _slideAnimation,
+        child: FadeTransition(
+          opacity: _fadeAnimation,
+          child: Container(
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
+              gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [Colors.white, Colors.white70],
+                colors: [
+                  AppColors.accentColor.withOpacity(0.8),
+                  AppColors.primaryColor.withOpacity(0.9),
+                ],
             ),
-            borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.2),
-                blurRadius: 8,
-                offset: const Offset(0, 4),
+                  color: AppColors.primaryColor.withOpacity(0.3),
+                  blurRadius: 15,
+                  offset: const Offset(0, 5),
               ),
             ],
           ),
-          child: FloatingActionButton(
-            onPressed: _addMedication,
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            child: const Icon(
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: _showAddAlertDialog,
+                borderRadius: BorderRadius.circular(20),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.2),
+                      width: 1,
+                    ),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
               Icons.add,
-              color: Color(0xFF1976D2),
+                        color: Colors.white.withOpacity(0.95),
+                        size: 24,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        appLocalizations.translate('addMedication'),
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.95),
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ),
         ),
       ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
-}
-
-class MedicationTime {
-  final String name;
-  final TimeOfDay time;
-  final String dosage;
-  final List<bool> weeklySchedule;
-
-  const MedicationTime({
-    required this.name,
-    required this.time,
-    required this.dosage,
-    required this.weeklySchedule,
-  });
 } 
